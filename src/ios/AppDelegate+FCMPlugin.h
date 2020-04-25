@@ -15,7 +15,7 @@
 + (NSData*)getLastPush;
 + (NSString*)getFCMToken;
 + (NSString*)getAPNSToken;
-+ (void)requestPushPermission;
++ (void)requestPushPermission:(void (^)(NSNumber* yesNoOrNil))block;
 + (void)hasPushPermission:(void (^)(NSNumber* yesNoOrNil))block;
 
 @end

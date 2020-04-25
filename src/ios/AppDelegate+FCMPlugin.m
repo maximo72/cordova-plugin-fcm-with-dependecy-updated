@@ -45,15 +45,17 @@ NSString *const kGCMMessageIDKey = @"gcm.message_id";
     [FIRMessaging messaging].delegate = self;
 }
 
-+ (void)requestPushPermission {
++ (void)requestPushPermission:(void (^)(NSNumber* yesNoOrNil))block {
     UNAuthorizationOptions authOptions = UNAuthorizationOptionAlert | UNAuthorizationOptionSound | UNAuthorizationOptionBadge;
     [[UNUserNotificationCenter currentNotificationCenter] requestAuthorizationWithOptions:authOptions completionHandler:^(BOOL granted, NSError * _Nullable error) {
         if (granted) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 [[UIApplication sharedApplication] registerForRemoteNotifications];
             });
+            block([NSNumber numberWithBool:YES]);
         } else {
             NSLog(@"User Notification permission denied: %@", error.localizedDescription);
+            block([NSNumber numberWithBool:NO]);
         }
     }];
 }
@@ -68,17 +70,17 @@ NSString *const kGCMMessageIDKey = @"gcm.message_id";
     if (userInfo[kGCMMessageIDKey]) {
         NSLog(@"Message ID 1: %@", userInfo[kGCMMessageIDKey]);
     }
-    
+
     // Print full message.
     NSLog(@"%@", userInfo);
-    
+
     NSError *error;
     NSDictionary *userInfoMutable = [userInfo mutableCopy];
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:userInfoMutable
                                                        options:0
                                                          error:&error];
     [FCMPlugin.fcmPlugin notifyOfMessage:jsonData];
-    
+
     // Change this to your preferred presentation option
     completionHandler(UNNotificationPresentationOptionNone);
 }
@@ -91,20 +93,20 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
     if (userInfo[kGCMMessageIDKey]) {
         NSLog(@"Message ID 2: %@", userInfo[kGCMMessageIDKey]);
     }
-    
+
     // Print full message.
     NSLog(@"%@", userInfo);
-    
+
     NSError *error;
     NSDictionary *userInfoMutable = [userInfo mutableCopy];
-    
+
     NSLog(@"New method with push callback: %@", userInfo);
-    
+
     [userInfoMutable setValue:@(YES) forKey:@"wasTapped"];
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:userInfoMutable options:0 error:&error];
     NSLog(@"APP WAS CLOSED DURING PUSH RECEPTION Saved data: %@", jsonData);
     lastPush = jsonData;
-    
+
     completionHandler();
 }
 
@@ -126,7 +128,7 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
 - (void)application:(UIApplication *)application didReceiveRemoteNotification:(NSDictionary *)userInfo
 fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     [[FIRMessaging messaging] appDidReceiveMessage:userInfo];
-    
+
     // Print message ID.
     NSLog(@"Message ID: %@", userInfo[@"gcm.message_id"]);
 

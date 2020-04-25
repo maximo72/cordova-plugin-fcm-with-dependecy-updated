@@ -112,19 +112,29 @@ static FCMPlugin *fcmPluginInstance;
 - (void)requestPushPermission:(CDVInvokedUrlCommand *)command {
     NSLog(@"requestPushPermission");
     [self.commandDelegate runInBackground:^{
-        [AppDelegate requestPushPermission];
+        [AppDelegate requestPushPermission:^(NSNumber* hasPermission){
+            __block CDVPluginResult * commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+            if ([hasPermission boolValue] == YES) {
+                NSLog(@"requestPushPermission: true");
+                commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:YES];
+            } else {
+                NSLog(@"requestPushPermission: false");
+                commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsBool:NO];
+            }
+            [self.commandDelegate sendPluginResult:commandResult callbackId:command.callbackId];
+        }];
     }];
 }
 
 - (void)registerNotification:(CDVInvokedUrlCommand *)command {
     NSLog(@"view registered for notifications");
-    
+
     notificatorReceptorReady = YES;
     NSData* lastPush = [AppDelegate getLastPush];
     if (lastPush != nil) {
         [FCMPlugin.fcmPlugin notifyOfMessage:lastPush];
     }
-    
+
     CDVPluginResult* pluginResult = nil;
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
